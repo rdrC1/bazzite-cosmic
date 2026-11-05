@@ -26,9 +26,10 @@ jobs:
     runs-on: ubuntu-26.04
 
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
+      actions: write
 
     steps:
       # These stage versions are pinned by https://github.com/renovatebot/renovate
@@ -161,4 +162,9 @@ jobs:
           # https://github.com/coreos/rpm-ostree/issues/5509
           # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
+
+      - name: Prevent GitHub 60-Day Cron Suspension
+        uses: gautamkrishnar/keepalive-workflow@v2
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+
 
