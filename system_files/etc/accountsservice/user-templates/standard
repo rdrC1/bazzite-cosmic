@@ -1,0 +1,6 @@
+[Template]
+
+[User]
+Session=niri
+XSession=niri
+Icon=${HOME}/.face
