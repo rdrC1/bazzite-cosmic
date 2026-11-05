@@ -26,10 +26,9 @@ jobs:
     runs-on: ubuntu-26.04
 
     permissions:
-      contents: write
+      contents: read
       packages: write
       id-token: write
-      actions: write
 
     steps:
       # These stage versions are pinned by https://github.com/renovatebot/renovate
@@ -82,16 +81,6 @@ jobs:
           just ostree-rechunk \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
-
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    just rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
 
       - name: Generate Build Tags
         id: gen-build-tags
@@ -162,9 +151,3 @@ jobs:
           # https://github.com/coreos/rpm-ostree/issues/5509
           # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
-
-      - name: Prevent GitHub 60-Day Cron Suspension
-        uses: gautamkrishnar/keepalive-workflow@v2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-
-

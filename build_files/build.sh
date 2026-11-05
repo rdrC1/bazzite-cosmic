@@ -25,10 +25,9 @@ dnf5 remove -y \
     nautilus || true
 
 ### ---------------------------------------------------------------------------
-### 2. INSTALL SYSTEM76 COSMIC DESKTOP & PORTALS
+### 2. INSTALL SYSTEM76 COSMIC DESKTOP, NIRI & PORTALS
 ### ---------------------------------------------------------------------------
-# Install COSMIC desktop environment + gnome-keyring so encrypted
-# credentials and Secret Service API consumers (Bitwarden, browsers, Steam) work.
+# Install complete COSMIC epoch + Niri Wayland compositor + SDDM + credentials
 dnf5 install -y \
     @cosmic-desktop \
     cosmic-store \
@@ -50,19 +49,27 @@ dnf5 install -y \
     cosmic-notifications \
     cosmic-idle \
     cosmic-screenshot \
-    cosmic-greeter \
     xdg-desktop-portal-cosmic \
     xdg-desktop-portal-gtk \
     gnome-keyring \
     gnome-keyring-pam \
     libsecret \
-    network-manager-applet
+    network-manager-applet \
+    niri \
+    niri-settings \
+    xwayland-satellite \
+    fuzzel \
+    waybar \
+    alacritty \
+    sddm \
+    sddm-breeze \
+    sddm-themes
 
 ### ---------------------------------------------------------------------------
-### 3. FIX PAM SO COSMIC-GREETER AUTO-UNLOCKS GNOME-KEYRING AT LOGIN
+### 3. FIX PAM SO SDDM AUTO-UNLOCKS GNOME-KEYRING AT LOGIN
 ### ---------------------------------------------------------------------------
-# In Fedora Atomic/bootc, package defaults reside in /usr/lib/pam.d/
-for pam_file in /usr/lib/pam.d/cosmic-greeter /etc/pam.d/cosmic-greeter; do
+# Ensure SDDM and any fallback greeters auto-unlock gnome-keyring at login
+for pam_file in /usr/lib/pam.d/sddm /etc/pam.d/sddm /usr/lib/pam.d/cosmic-greeter /etc/pam.d/cosmic-greeter; do
     if [ -f "$pam_file" ]; then
         if ! grep -q "pam_gnome_keyring.so" "$pam_file"; then
             echo "auth       optional     pam_gnome_keyring.so" >> "$pam_file"
@@ -72,7 +79,20 @@ for pam_file in /usr/lib/pam.d/cosmic-greeter /etc/pam.d/cosmic-greeter; do
 done
 
 ### ---------------------------------------------------------------------------
-### 4. CONFIGURE XDG DESKTOP PORTALS (PIPEWIRE SCREENCAST + GTK FALLBACK)
+### 4. CONFIGURE SDDM DISPLAY MANAGER (THEME & INPUT DEFAULTS)
+### ---------------------------------------------------------------------------
+mkdir -p /usr/lib/sddm/sddm.conf.d
+cat << 'EOF' > /usr/lib/sddm/sddm.conf.d/10-breeze.conf
+[Theme]
+Current=breeze
+
+[General]
+InputMethod=
+Numlock=none
+EOF
+
+### ---------------------------------------------------------------------------
+### 5. CONFIGURE XDG DESKTOP PORTALS (COSMIC + GTK FALLBACK)
 ### ---------------------------------------------------------------------------
 mkdir -p /usr/share/xdg-desktop-portal
 cat << 'EOF' > /usr/share/xdg-desktop-portal/cosmic-portals.conf
@@ -85,13 +105,14 @@ org.freedesktop.impl.portal.Secret=gnome-keyring;
 EOF
 
 ### ---------------------------------------------------------------------------
-### 5. ENABLE COSMIC-GREETER DISPLAY MANAGER IN SYSTEMD
+### 6. ENABLE SDDM DISPLAY MANAGER IN SYSTEMD
 ### ---------------------------------------------------------------------------
 systemctl disable gdm.service || true
-systemctl enable cosmic-greeter.service
+systemctl disable cosmic-greeter.service || true
+systemctl enable sddm.service
 
 ### ---------------------------------------------------------------------------
-### 6. ENSURE CLEAN /VAR AND /TMP FOR OSTREE / BOOTC COMMIT
+### 7. ENSURE CLEAN /VAR AND /TMP FOR OSTREE / BOOTC COMMIT
 ### ---------------------------------------------------------------------------
 dnf5 clean all
 rm -rf /var/lib/dnf /var/cache/* /tmp/*
