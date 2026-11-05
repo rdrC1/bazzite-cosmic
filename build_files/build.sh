@@ -61,6 +61,15 @@ dnf5 install -y \
     fuzzel \
     waybar \
     alacritty \
+    swaybg \
+    swayidle \
+    swaylock \
+    gtklock \
+    mako \
+    cliphist \
+    wl-clipboard \
+    pavucontrol \
+    brightnessctl \
     sddm \
     sddm-breeze \
     sddm-themes
